@@ -490,6 +490,7 @@ function back() {
 function loadUserItem(idx) {
     let instructionsStr = ""
     let ingredientsStr = ""
+    recipeStorageRef = storageRef.child(userRecipes[idx].image);
     $.each(userRecipes[idx].ingredients, function(id, ingredientItem) {
         console.log(ingredientItem)
 
@@ -555,6 +556,8 @@ function loadUserItem(idx) {
 function loadRecipeItem(idx) {
     let instructionsStr = ""
     let ingredientsStr = ""
+    recipeStorageRef = storageRef.child(recipes[idx].image);
+
     recipeStorageRef.getDownloadURL().then((url) => {
         $(`#img`).prop("src", url)
     }).catch((error) => {
