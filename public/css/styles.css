@@ -310,6 +310,25 @@ footer .links-mobile {
     width: 82px;
   }
 }
+.buttonHolder {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.buttonHolder .edit span,
+.buttonHolder .delete span {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  width: 141.88px;
+  height: 47px;
+  background-color: #FFD972;
+  border-radius: 25px;
+  box-shadow: 0 2px 2px black;
+  margin-right: 40px;
+}
+
 .recipes {
   display: flex;
   position: relative;
@@ -464,26 +483,6 @@ ul li {
   background-color: #FFD972;
   border-radius: 25px;
   box-shadow: 0 2px 2px black;
-}
-
-.edit span,
-.delete span {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  justify-content: center;
-  width: 141.88px;
-  height: 47px;
-  background-color: #FFD972;
-  border-radius: 25px;
-  box-shadow: 0 2px 2px black;
-  margin-right: 40px;
-}
-
-.buttonHolder {
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: 20px;
 }
 
 @media only screen and (max-width: 784px) {

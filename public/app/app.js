@@ -100,6 +100,7 @@ var uid = "";
 _recipes = [];
 var storage = "";
 var storageRef = "";
+var userRecipes = [];
 
 function signInAnon() {
     firebase
@@ -160,8 +161,12 @@ function createAccount() {
                 .doc(user.uid)
                 .set(userObj)
                 .then((doc) => {
-                    console.log('User Info collected');
+                    alert('Your account has been created');
                     _userProfileInfo = userObj.toString;
+                    $("#fNameSignUp").val("");
+                    $("#lNameSignUp").val("");
+                    $("#emailSignUp").val("");
+                    $("#passwordSignUp").val("");
                 }).catch((error) => {
                     var errorCode = error.code;
                     var errorMessage = error.message;
@@ -200,6 +205,7 @@ function login() {
             userFullName = user.displayName
             $("#emailLogin").val("");
             $("#passwordLogin").val("");
+            userExists = true;
             _db
                 .collection("Users").doc(user.uid).get().then((doc) => {
 
@@ -224,21 +230,34 @@ function login() {
 
 var gsReference = ""
 
-userRecipes = {};
 
 function initFirebase() {
 
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
+
             console.log("auth changed logged in")
             _db = firebase.firestore();
 
+            _db
+                .collection("Users").doc(user.uid).get().then((doc) => {
+
+                    $.each(doc, function() {
+                        _userProfileInfo = doc.data();
+                        console.log(console.log("Login User Info," + JSON.stringify(_userProfileInfo)))
+                    })
+                })
+                .catch((error) => {
+                    var errorCode = error.code;
+                    var errorMessage = error.message;
+                    console.log("Error Signing in: " + errorMessage)
+                });
 
             storage = firebase.storage();
             storageRef = storage.ref();
             gsReference = storage.refFromURL('gs://iupui-thejunglecook-final.appspot.com')
             uid = user.uid;
-            userRecipes = _db.collection('Recipes').where("creator", "==", uid);
+
             console.log(userRecipes)
             let recipe = _db.collection('Recipes').get()
             recipe = JSON.stringify(recipe);
@@ -248,6 +267,10 @@ function initFirebase() {
 
                     let data = doc.data();
                     recipes.push(data);
+
+                    if (data.creator == uid) {
+                        userRecipes.push(data)
+                    }
 
                 })
                 loadRecipes();
@@ -259,8 +282,9 @@ function initFirebase() {
             if (user.displayName) {
                 $(".loginNav").html(`<div class="signOut" onclick="signOut()"> Sign Out </div>`)
                 $(".loginNav").attr("href", '#login')
+                userExists = true;
+
             }
-            userExists = true;
 
         } else {
             _db = "";
@@ -269,7 +293,7 @@ function initFirebase() {
             console.log("auth changed Logged Out");
             $(".loginNav").html(`Login`).attr('href', '#login')
             userFullName = "";
-            $('#create').attr('disabled', true)
+            $('#create').prop('disabled', true)
 
         }
     })
@@ -335,28 +359,41 @@ function changeRoute() {
             loadUserRecipes();
         })
     } else if (pageId == "create") {
-        $.get(`pages/${pageId}/${pageId}.html`, function(page) {
-            $("#app").html(page);
-            $(".name").html(userFullName);
-        })
+        if (userExists) {
+            $.get(`pages/${pageId}/${pageId}.html`, function(page) {
+                $("#app").html(page);
+                $(".name").html(userFullName);
+            })
+        } else {
+            pageId = "login";
+            alert('You need to login or signup to create a recipe.');
+            $.get(`pages/${pageId}/${pageId}.html`, function(page) {
+                $("#app").html(page);
+            })
+        }
     }
+
+}
+
+function deleteRecipe(idx) {
+    recipeName = userRecipes[idx].name;
+    _db.collection("Recipes").doc(recipeName).delete().then(() => {
+        console.log("Document Deleted from database")
+        alert('Deleted ' + recipeName)
+        userRecipes.pop(idx);
+    })
+
+
 
 }
 
 function loadUserRecipes() {
     let recipeStr = "<ul>";
-    $.each((_userProfileInfo.recipes), function(idx, recipe) {
-        _db.collection('Recipes').doc(recipe).get().then((doc) => {
-            if (doc.exists) {
-                console.log("document:" + doc.data());
-            } else {
-                console.log("No such document")
-            }
-        })
-        recipeStr += `<li id="{idx}" onclick="loadUserItem(${idx})">
+    $.each((userRecipes), function(idx, recipe) {
+        recipeStr += `<li id="{idx}"">
         <div class="item">
                 <div class="image">
-                    <div class="view" onclick="loadRecipe(${idx})"><span>View</span> </div>
+                    <div class="view" onclick="loadUserItem(${idx})"><span>View</span> </div>
                     <img src="images/${recipe.image}" alt="">
                 </div>
                 <div class="text">
@@ -378,8 +415,13 @@ function loadUserRecipes() {
                 
             </div>
         <div class="buttonHolder">
- <div class="edit" onclick="loadRecipe(${idx})"><span>Edit</span> </div>
-            <div class="delete" onclick="loadRecipe(${idx})"><span>Delete</span> </div>
+            <div class="edit" onclick="editRecipe(${idx})">
+                <span>Edit</span>
+            </div>
+            <div class="delete" onclick="deleteRecipe(${idx})">
+                <span>Delete</span>
+            </div>
+            
         </div>
         
             </li>`
@@ -569,7 +611,7 @@ function loadRecipeItem(idx) {
 }
 
 function editRecipe(idx) {
-    console.log(recipes[idx].ingredients)
+    console.log(userRecipes[idx].ingredients)
 
 
     $(document).ready(function() {
@@ -732,7 +774,8 @@ function addRecipe() {
     };
 
     _db.collection('Recipes').doc(newRecipeObj.name).set(newRecipeObj).then(() => {
-        alert("Recipe Added");
+        alert(newRecipeName + "Created")
+
     }).catch((error) => {
         console.error("Error writing document: ", error);
     });
@@ -741,6 +784,7 @@ function addRecipe() {
     updateUserInfo(_userProfileInfo);
     console.log(_userProfileInfo);
     loadRecipes();
+
 }
 
 function updateUserInfo(userObj) {
@@ -794,6 +838,7 @@ function updateRecipeInfo(index) {
     console.log(updatedRecipeObj)
     _db.collection('Recipes').doc(newRecipeName).update(updatedRecipeObj).then(() => {
         alert("Recipe Updated");
+        recipes[index] = updatedRecipeObj;
     }).catch((error) => {
         console.error("Error updating document: ", error);
     });
