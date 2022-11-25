@@ -88,7 +88,7 @@ RECIPES = [{
 
 
 var _db = "";
-
+var recipeStorageRef = "";
 var userExists = false;
 var userFullName = "";
 var _userProfileInfo = {
@@ -389,12 +389,19 @@ function deleteRecipe(idx) {
 
 function loadUserRecipes() {
     let recipeStr = "<ul>";
+
     $.each((userRecipes), function(idx, recipe) {
+        recipeStorageRef = storageRef.child(recipe.image);
+        recipeStorageRef.getDownloadURL().then((url) => {
+            $(`#img${idx}`).prop("src", url)
+        }).catch((error) => {
+            console.log("Image download error" + error.message);
+        })
         recipeStr += `<li id="{idx}"">
         <div class="item">
                 <div class="image">
                     <div class="view" onclick="loadUserItem(${idx})"><span>View</span> </div>
-                    <img src="images/${recipe.image}" alt="">
+                    <img src="" alt="" id="img${idx}">
                 </div>
                 <div class="text">
                     <div class="title">
@@ -483,22 +490,27 @@ function back() {
 function loadUserItem(idx) {
     let instructionsStr = ""
     let ingredientsStr = ""
-    $.each(RECIPES[idx].ingredients, function(id, ingredientItem) {
+    $.each(userRecipes[idx].ingredients, function(id, ingredientItem) {
         console.log(ingredientItem)
 
-        ingredientsStr += `<li id="${id}">${ingredientItem.name}</li>`
+        ingredientsStr += `<li id="${id}">${ingredientItem}</li>`
 
         console.log(ingredientsStr)
     })
-    console.log(RECIPES[idx].instructions)
-    $.each(RECIPES[idx].instructions, function(id, instruction) {
+    console.log(userRecipes[idx].instructions)
+    $.each(userRecipes[idx].instructions, function(id, instruction) {
         console.log(instruction)
 
-        instructionsStr += `<li id="${id}">${instruction.value}</li>`
+        instructionsStr += `<li id="${id}">${instruction}</li>`
 
         console.log(instructionsStr)
 
         return instructionsStr
+    })
+    recipeStorageRef.getDownloadURL().then((url) => {
+        $(`#img`).prop("src", url)
+    }).catch((error) => {
+        console.log("Image download error" + error.message);
     })
     $("#app").empty();
     $("#app").html(`<div class="recipe">
@@ -508,21 +520,21 @@ function loadUserItem(idx) {
     <div class="hero">
         <div class="verticalText">
             <span>
-                ${RECIPES[idx].name}
+                ${userRecipes[idx].name}
             </span>
         </div>
         <div class="image">
-            <img src="images/${RECIPES[idx].image}" alt="">
+            <img alt="" id="img">
         </div>
     </div>
     <div class="desc">
         <h2>Description</h2>
-        <span>${RECIPES[idx].desc}</span>
+        <span>${userRecipes[idx].desc}</span>
 
         <h3>Total Time:</h3>
-        <span>${RECIPES[idx].time}</span>
+        <span>${userRecipes[idx].time}</span>
         <h3>Servings:</h3>
-        <span>${RECIPES[idx].servings}</span>
+        <span>${userRecipes[idx].servings}</span>
     </div>
     <div class="ingredients">
         <h2>Ingredients:</h2>
@@ -537,11 +549,17 @@ function loadUserItem(idx) {
         </ol>
     </div>
 </div>`)
+
 }
 
 function loadRecipeItem(idx) {
     let instructionsStr = ""
     let ingredientsStr = ""
+    recipeStorageRef.getDownloadURL().then((url) => {
+        $(`#img`).prop("src", url)
+    }).catch((error) => {
+        console.log("Image download error" + error.message);
+    })
     console.log("ingredient 1" + recipes[idx].ingredients[0])
     $.each(recipes[idx].ingredients, function(id, ingredientItem) {
         console.log(ingredientItem)
@@ -572,7 +590,7 @@ function loadRecipeItem(idx) {
             </span>
         </div>
         <div class="image">
-            <img src="images/${recipes[idx].image}" alt="">
+            <img id="img" alt="">
         </div>
     </div>
     <div class="desc">
